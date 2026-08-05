@@ -1,0 +1,8 @@
+dist/
+*.md
+.git/
+.github/
+testdata/
+coverage.*
+docker-compose*.yml
+*.env

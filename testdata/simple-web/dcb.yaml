@@ -1,0 +1,21 @@
+project: webapp
+version: "3.8"
+
+services:
+  api:
+    build: ./api
+    port: 8080
+    depends_on:
+      - db
+    healthcheck: true
+    env_file: .env
+
+  db:
+    image: postgres:15-alpine
+    port: 5432
+    env:
+      POSTGRES_DB: webapp
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volume: pgdata:/var/lib/postgresql/data
+    healthcheck: true

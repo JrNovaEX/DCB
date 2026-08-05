@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: "1.22"
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Tidy modules
+        run: go mod tidy
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          args: --timeout=5m
+
+  test:
+    name: Test (Go ${{ matrix.go }} / ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.22", "1.23"]
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache: true
+
+      - name: Tidy and verify modules
+        run: |
+          go mod tidy
+          go mod verify
+
+      - name: Run tests (Linux — with race detector)
+        if: matrix.os == 'ubuntu-latest'
+        run: go test ./... -race -count=1 -timeout 120s -coverprofile=coverage.out -covermode=atomic
+
+      - name: Run tests (Windows — no race detector)
+        if: matrix.os == 'windows-latest'
+        run: go test ./... -count=1 -timeout 120s -coverprofile=coverage.out -covermode=atomic
+
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.go == '1.22'
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage.out
+          flags: unittests
+          fail_ci_if_error: false
+
+  build:
+    name: Build binary
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Tidy modules
+        run: go mod tidy
+
+      - name: Build
+        run: make build
+
+      - name: Verify binary runs
+        run: ./dist/dcb version
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: dcb-linux-amd64
+          path: dist/dcb
+          retention-days: 7

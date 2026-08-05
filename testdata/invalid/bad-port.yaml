@@ -1,0 +1,5 @@
+project: myapp
+services:
+  api:
+    image: nginx
+    port: 99999

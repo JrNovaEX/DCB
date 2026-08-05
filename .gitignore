@@ -1,0 +1,26 @@
+# Build output
+dist/
+*.exe
+
+# Test coverage
+coverage.out
+coverage.html
+
+# Generated compose files (not tracked — they're outputs, not source)
+docker-compose*.yml
+!testdata/**/docker-compose*.yml
+
+# Env files
+.env
+*.env
+!*.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo

@@ -1,0 +1,8 @@
+project: myapp
+services:
+  a:
+    image: nginx
+    depends_on: [b]
+  b:
+    image: nginx
+    depends_on: [a]
